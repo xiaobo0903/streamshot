@@ -1,12 +1,12 @@
 #!/bin/bash
 inotifywait -mrq --timefmt '%d/%m/%y %H:%M'  --format '%T %w %f %e'  --event close_write  --exclude '^(.*\.m3u8|.*\.bak|.*\.jpg)$' /tmp/live/ | awk -F' ' \
 '{len=split($3, array, "/"); \
-cmd= "ffmpeg -ss 0 -i "$3$4" -y -c:v rawvideo -pix_fmt yuv420p -s 960x540  -vframes 1 "$3$4".yuv >/dev/null 2>&1 &&" \
-"redis-cli -h localhost -x set "array[len-2]"_"array[len-1]" <"$3$4".yuv >/dev/null 2>&1 &&" \
+cmd= "ffmpeg -ss 0 -t 0.001 -i "$3$4" -y -f image2 -vframes 1 "$3$4".jpg >/dev/null 2>&1 &&" \
+"redis-cli -h localhost -x set "array[len-2]"_"array[len-1]" <"$3$4".jpg >/dev/null 2>&1 &&" \
 "redis-cli -h localhost expire "array[len-2]"_"array[len-1]" 600 >/dev/null 2>&1 && " \
-"rm -rf "$3$4".yuv &";
-print cmd;
-#system(cmd);
+"rm -rf "$3$4".jpg &";
+#print cmd;
+system(cmd);
 #now=systime();print now;
 }'
 #system("ffmpeg -ss 0 -i "$3$4" -y -f image2  -vframes 1 "$3$4".jpg >/dev/null 2>&1;&&"\
