@@ -4,6 +4,8 @@
 
 ip = ngx.var.red_ip
 port = ngx.var.red_port+0
+--截图保存临时地址，上传后就会删除，但需要保证Nginx进程需要有读写权限；
+path= ngx.var.pic_path
 
 --切割字符串
 function mysplit(inputstr, sep)
@@ -34,12 +36,15 @@ end
 --根据ts的访问地址，调用ffmpeg进行截图；
 local function ffmpeg_shot(tsurl, appN, streamN)
 
-    --截图保存临时地址，上传后就会删除，但需要保证Nginx进程需要有读写权限；
-    path='/tmp/'
     ngx.log(ngx.ERR, "popen begin!")
-    t =io.popen('ffmpeg -y -i '..tsurl..' -f image2 -ss 0 -t 0.001 -vframes 1 '..path..appN..'_'..streamN..'.jpg >/dev/null 2>&1&& redis-cli -h '..ip..' -p '..port..
+    cmd = 'ffmpeg -y -i '..tsurl..' -f image2 -ss 0 -t 0.001 -vframes 1 '..path..appN..'_'..streamN..'.jpg >/dev/null 2>&1&& redis-cli -h '..ip..' -p '..port..
     ' -x set '..appN..'_'..streamN..'_pic <'..path..appN..'_'..streamN..'.jpg >/dev/null 2>&1 && redis-cli -h '..ip..' -p '..port..
-    ' expire '..appN..'_'..streamN..'_pic 20 >/dev/null && rm -rf '..path..appN..'_'..streamN..'.jpg&')
+    ' expire '..appN..'_'..streamN..'_pic 20 >/dev/null && rm -rf '..path..appN..'_'..streamN..'.jpg&'
+    ngx.log(ngx.ERR, ip)
+    ngx.log(ngx.ERR, port)
+    ngx.log(ngx.ERR, path)
+    ngx.log(ngx.ERR, cmd)
+    t = io.popen(cmd)
     --ngx.log(ngx.ERR, "popen end1!")
     --popen系统调用是非阻塞，所以会存在没有截图完成时即返回结果的现像，为了保证在截图后进行后续操作，进程增加了300ms的延时，不够精确，但应该能够满足大部分需求；
     ngx.sleep(0.3)
